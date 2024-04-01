@@ -114,7 +114,7 @@ def insert_tweet(connection,tweet):
             user_id_urls = get_id_urls(tweet['user']['url'], connection)
 
         # create/update the user
-        sql = sqlalchemy.sql.text('''
+        sql = sqlalchemy.sql.text('''INSERT INTO users (id_urls) VALUES (:user_id_urls)
             ''')
 
         ########################################
@@ -176,7 +176,7 @@ def insert_tweet(connection,tweet):
                 ''')
 
         # insert the tweet
-        sql=sqlalchemy.sql.text(f'''
+        sql=sqlalchemy.sql.text(f'''INSERT INTO tweets (user_id, geo_coords, geo_str, text, country_code, state_code, place_name) VALUES ()
             ''')
 
         ########################################
