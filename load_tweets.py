@@ -115,7 +115,10 @@ def insert_tweet(connection,tweet):
 
         # create/update the user
         sql = sqlalchemy.sql.text('''INSERT INTO users (id_urls) VALUES (:user_id_urls)
+            ON CONFLICT DO NOTHING
             ''')
+        user_id = connection.execute(sql, {'user_id_urls': user_id_urls}).fetchone()[0]  # Fetch user_id
+
 
         ########################################
         # insert into the tweets table
@@ -176,8 +179,19 @@ def insert_tweet(connection,tweet):
                 ''')
 
         # insert the tweet
-        sql=sqlalchemy.sql.text(f'''INSERT INTO tweets (user_id, geo_coords, geo_str, text, country_code, state_code, place_name) VALUES ()
+        sql = sqlalchemy.sql.text('''
+            INSERT INTO tweets (user_id, geo_coords, geo_str, text, country_code, state_code, place_name)
+            VALUES (:user_id, :geo_coords, :geo_str, :text, :country_code, :state_code, :place_name)
             ''')
+        connection.execute(sql, {
+            'user_id': user_id,
+            'geo_coords': geo_coords,
+            'geo_str': geo_str,
+            'text': text,
+            'country_code': country_code,
+            'state_code': state_code,
+            'place_name': place_name
+        })
 
         ########################################
         # insert into the tweet_urls table
@@ -191,8 +205,11 @@ def insert_tweet(connection,tweet):
         for url in urls:
             id_urls = get_id_urls(url['expanded_url'], connection)
 
-            sql=sqlalchemy.sql.text('''
+            sql = sqlalchemy.sql.text('''
+                INSERT INTO tweet_urls (tweet_id, url_id)
+                VALUES (:tweet_id, :url_id)
                 ''')
+            connection.execute(sql, {'tweet_id': tweet['id'], 'url_id': id_urls})
 
         ########################################
         # insert into the tweet_mentions table
@@ -211,11 +228,18 @@ def insert_tweet(connection,tweet):
             # therefore, we must store the user info "unhydrated"
             # HINT:
             # use the ON CONFLICT DO NOTHING syntax
-            sql=sqlalchemy.sql.text('''
+            sql = sqlalchemy.sql.text('''
+                INSERT INTO users (id)
+                VALUES (:user_id)
+                ON CONFLICT DO NOTHING
                 ''')
+            connection.execute(sql, {'user_id': mention['id']})
 
             # insert into tweet_mentions
             sql=sqlalchemy.sql.text('''
+                INSERT INTO tweet_mentions (tweet_id, user_id)
+                VALUES (:tweet_id, :user_id)
+                ON CONFLICT DO NOTHING
                 ''')
 
         ########################################
@@ -233,7 +257,12 @@ def insert_tweet(connection,tweet):
 
         for tag in tags:
             sql=sqlalchemy.sql.text('''
+                INSERT INTO tweet_tags (tweet_id, tag)
+                VALUES (:tweet_id, :tag)
+                ON CONFLICT DO NOTHING
                 ''')
+            connection.execute(sql, {'tweet_id': tweet['id'], 'tag': tag})
+                
 
         ########################################
         # insert into the tweet_media table
@@ -249,8 +278,12 @@ def insert_tweet(connection,tweet):
 
         for medium in media:
             id_urls = get_id_urls(medium['media_url'], connection)
-            sql=sqlalchemy.sql.text('''
+            sql = sqlalchemy.sql.text('''
+                INSERT INTO tweet_media (tweet_id, url_id)
+                VALUES (:tweet_id, :url_id)
+                ON CONFLICT DO NOTHING
                 ''')
+            connection.execute(sql, {'tweet_id': tweet['id'], 'url_id': id_urls})
 
 ################################################################################
 # main functions
